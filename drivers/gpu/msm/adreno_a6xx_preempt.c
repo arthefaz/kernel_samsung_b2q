@@ -731,6 +731,7 @@ int a6xx_preemption_init(struct adreno_device *adreno_dev)
 	ret = PTR_ERR_OR_ZERO(iommu->smmu_info);
 	if (ret)
 		return ret;
+		
 
 	/*
 	 * First 8 dwords of the preemption scratch buffer is used to store the address for CP

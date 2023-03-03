@@ -145,6 +145,7 @@ static bool __dead_end_function(struct objtool_file *file, struct symbol *func,
 		"machine_real_restart",
 		"rewind_stack_do_exit",
 		"cpu_bringup_and_idle",
+		"kunit_try_catch_throw",
 	};
 
 	if (!func)

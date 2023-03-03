@@ -1,7 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-only
-/* Copyright (c) 2015-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
- */
+/* Copyright (c) 2015-2021, The Linux Foundation. All rights reserved. */
 
 #include <linux/firmware.h>
 #include <linux/module.h>
@@ -512,6 +510,33 @@ out:
 	return ret;
 }
 
+#ifdef CONFIG_SEC_SS_CNSS_FEATURE_SYSFS
+extern int ant_from_macloader;
+void cnss_add_ss_naming_rule(struct cnss_plat_data *plat_priv, 
+				  char *filename)
+{
+	char ant[3];
+#ifdef CONFIG_WLAN_MULTIPLE_SUPPORT_FEM
+	int high = -1;
+
+	high = cnss_get_fem_sel_gpio_status (plat_priv);
+#endif
+
+	cnss_pr_err("ant_from_macloader %d\n",ant_from_macloader);
+	//Add ant configuration from macloader
+	if (ant_from_macloader == 1 || ant_from_macloader == 2 || ant_from_macloader == 10) { // 10: for GTX disabled bdf
+		snprintf(ant, 3, "%d", ant_from_macloader); //convert to string
+		strncat(filename, ant, strlen(ant));
+	}
+	
+#ifdef CONFIG_WLAN_MULTIPLE_SUPPORT_FEM
+	if (high > 0)
+		strncat(filename, ".nxp", 4);
+#endif
+	return;
+}
+#endif /* CONFIG_SEC_SS_CNSS_FEATURE_SYSFS */
+
 static int cnss_get_bdf_file_name(struct cnss_plat_data *plat_priv,
 				  u32 bdf_type, char *filename,
 				  u32 filename_len)
@@ -544,6 +569,9 @@ static int cnss_get_bdf_file_name(struct cnss_plat_data *plat_priv,
 				 plat_priv->board_info.board_id >> 8 & 0xFF,
 				 plat_priv->board_info.board_id & 0xFF);
 		}
+#ifdef CONFIG_SEC_SS_CNSS_FEATURE_SYSFS
+		cnss_add_ss_naming_rule(plat_priv, filename_tmp);
+#endif /* CONFIG_SEC_SS_CNSS_FEATURE_SYSFS */
 		break;
 	case CNSS_BDF_BIN:
 		if (plat_priv->board_info.board_id == 0xFF) {
@@ -2208,8 +2236,7 @@ static void cnss_wlfw_request_mem_ind_cb(struct qmi_handle *qmi_wlfw,
 			    ind_msg->mem_seg[i].size, ind_msg->mem_seg[i].type);
 		plat_priv->fw_mem[i].type = ind_msg->mem_seg[i].type;
 		plat_priv->fw_mem[i].size = ind_msg->mem_seg[i].size;
-		if (!plat_priv->fw_mem[i].va &&
-		    plat_priv->fw_mem[i].type == CNSS_MEM_TYPE_DDR)
+		if (plat_priv->fw_mem[i].type == CNSS_MEM_TYPE_DDR)
 			plat_priv->fw_mem[i].attrs |=
 				DMA_ATTR_FORCE_CONTIGUOUS;
 	}
